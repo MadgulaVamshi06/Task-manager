@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Template</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+</head>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        padding: 50px;
+    }
+</style>
+
+<body>
+    <div id="root"></div>
+</body>
+<script src="https://www.unpkg.com/react@18.2.0/umd/react.development.js"></script>
+<script src="https://www.unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script type="text/babel">
+
+    // Your  code will go here
+    let root = ReactDOM.createRoot(document.getElementById("root"));
+
+
+    function App() {
+        const [tasks, setTasks] = React.useState([]);
+        const [form, setForm] = React.useState({
+            title: "",
+            completed: false,
+            assignedTo: "",
+        });
+        
+
+        function handleChange(event) {
+            const value =
+                event.target.type === "checkbox"
+                    ? event.target.checked
+                    : event.target.value;
+            setForm({
+                ...form,
+                [event.target.name]: value,
+            });
+        }
+
+
+        function handleSubmit() {
+            event.preventDefault();
+            axios
+                .post("http://localhost:3000/todo", form)
+                .then((response) => {
+                    // Fetch tasks again to refresh the list
+                    setForm({ title: "", completed: false, assignedTo: "" });
+                })
+                .catch((error) => {
+                    console.error("There was an error!", error);
+                })
+        }
+        function fetchTasks() {
+            axios
+                .get("http://localhost:3000/todo")
+                .then((response) => {
+                    setTasks(response.data);
+                    console.log(response.data)
+                })
+                .catch((error) => {
+                    console.error("There was an error fetching the tasks", error);
+                })
+
+        }
+        function updateTask(id, updatedFields) {
+         
+          axios
+            .put(`http://localhost:3000/todo/${id}`, updatedFields)
+            .then((response) => {
+              fetchTasks(); // Refresh the tasks list
+            })
+            .catch((error) => {
+              console.error("There was an error updating the task", error);
+            })
+          
+        }
+
+        function deleteTask(id) {
+   
+          axios
+            .delete(`http://localhost:3000/todo/${id}`)
+            .then(() => {
+              fetchTasks(); // Refresh the tasks list
+            })
+            .catch((error) => {
+              console.error("There was an error deleting the task", error);
+            })
+            .finally(() => {
+            });
+        }
+        return <div>
+
+            <form onSubmit={handleSubmit}>
+                <div className="mb-3">
+                    <label htmlFor="exampleInputEmail1" className="form-label">Title</label>
+                    <input name="title"
+                        placeholder="Add new task" type="text" className="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" value={form.title}
+                        onChange={handleChange} />
+                </div>
+
+                <div className="mb-3 form-check">
+
+                    <label className="form-check-label" htmlFor="exampleCheck1">Completion Status</label>
+                    <input type="checkbox" name="completed" checked={form.completed} className="form-check-input" id="exampleCheck1" onChange={handleChange} />
+                </div>
+
+                <div className="mb-3">
+                    <label htmlFor="exampleInputPassword1" className="form-label">Assign</label>
+                    <select className="form-select" name="assignedTo" value={form.assignedTo} onChange={handleChange}>
+                        <option value="">Assign Task to</option>
+                        <option value="Amar">Amar</option>
+                        <option value="Akbar">Akbar</option>
+                        <option value="Anthony">Anthony</option>
+                    </select>
+                </div>
+
+                <button type="submit" className="btn btn-primary">Submit</button>
+            </form>
+            <br /><br />
+            <button onClick={fetchTasks} className="btn btn-primary" >
+                Get all tasks
+            </button>
+            <table className="table">
+                <thead>
+                    <tr>
+                        <th scope="col">id</th>
+                        <th scope="col">Title</th>
+                        <th scope="col">Assigned</th>
+                        <th scope="col">Status Marked</th>
+                        <th scope="col">Delete</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {tasks.map((task, index) => (
+                        <tr key={index}>
+                            <td>{index + 1}</td>
+                            <td>{task.title}</td>
+                            <td>{task.assignedTo}</td>
+                            <td>{<input
+                                type="checkbox"
+                                checked={task.completed}
+                                onChange={() =>
+                                    updateTask(task.id, { completed: !task.completed })
+                                }
+                            />}</td>
+                            <td>
+                                {<button className="btn btn-primary" onClick={() => deleteTask(task.id)}>Delete</button>}
+                                </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+
+        </div>
+    }
+    root.render(<App />)
+
+</script>
+
+</html>
